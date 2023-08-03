@@ -1,4 +1,5 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
+from flask_login import login_user, logout_user, login_required, current_user
 from database import db
 from models import User, Category, Course, SavedCourse
 
@@ -8,6 +9,51 @@ course_routes = Blueprint('course_routes', __name__)
 saved_course_routes = Blueprint('saved_course_routes', __name__)
 
 # Routes for the User model
+
+#handle user registration
+@user_routes.route('/register', methods=['POST'])
+def register():
+    username = request.form.get('username')
+    password = request.form.get('password')
+
+    # Check if the username already exists
+    existing_user = User.query.filter_by(username=username).first()
+    if existing_user:
+        return jsonify({'message': 'Username already exists'}), 400
+
+    new_user = User(username=username)
+    new_user.set_password(password)
+    db.session.add(new_user)
+    db.session.commit()
+
+    return jsonify({'message': 'User registered successfully'}), 201
+
+#handle user login
+@user_routes.route('/login', methods=['POST'])
+def login():
+    username = request.form.get('username')
+    password = request.form.get('password')
+
+    user = User.query.filter_by(username=username).first()
+
+    if not user or not user.check_password(password):
+        return jsonify({'message': 'Invalid username or password'}), 401
+
+    login_user(user)
+    return jsonify({'message': 'Logged in successfully'}), 200
+
+#handle user logout
+@user_routes.route('/logout', methods=['POST'])
+@login_required
+def logout():
+    logout_user()
+    return jsonify({'message': 'Logged out successfully'}), 200
+
+#get current user
+@user_routes.route('/current_user', methods=['GET'])
+@login_required
+def get_current_user():
+    return jsonify({'username': current_user.username}), 200
 
 #create a user 
 @user_routes.route('/api/users', methods=['POST'])

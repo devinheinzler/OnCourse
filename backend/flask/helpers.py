@@ -1,4 +1,6 @@
+
 #helper functions
+
 
     #average rating calculator example
 def calculate_average_rating(ratings):
